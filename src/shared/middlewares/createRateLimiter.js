@@ -19,10 +19,15 @@ export function createRateLimiter({ enabled, redisUrl, redisToken, limit = 100, 
   });
 
   return async (req, res, next) => {
-    const { success } = await ratelimit.limit(req.ip);
-    if (!success) {
-      return res.status(429).json({ message: 'Too many requests' });
+    try {
+      const { success } = await ratelimit.limit(req.ip);
+      if (!success) {
+        return res.status(429).json({ message: 'Too many requests' });
+      }
+      next();
+    } catch (err) {
+      console.warn('[RateLimiter] error, skipping', err.message);
+      next(); // fail-open
     }
-    next();
   };
 }
